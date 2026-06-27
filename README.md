@@ -1,60 +1,61 @@
-# pkm-atlas-api
+# pkm-altas-api
 
-A Go HTTP API for a Pokémon Dex Tracker, backed by PostgreSQL.
+A small Go 1.25 HTTP API for a Pokémon Dex Tracker, built on the standard
+library (`net/http`) with PostgreSQL via `pgx/v5`.
 
-Common tasks are wrapped in a `Makefile` — run `make help` to list them
-(e.g. `make db-up`, `make migrate-up`, `make test`, `make run`).
+## Running
 
-## Database migrations
+```bash
+# Hot reload on the host (requires Air)
+air -c .air.toml
 
-Migrations live in `migrations/` as numbered [golang-migrate](https://github.com/golang-migrate/migrate)
-up/down SQL files.
-
-The migrations run **inside the db container** — the `migrate` CLI is baked into
-the custom db image (`Dockerfile.db`), so no extra container and no host
-`migrate` CLI are needed, just Docker.
-
-Start Postgres (host port `5433` → container `5432`) and apply all migrations:
-
-```sh
-make db-up        # builds the custom db image (first run) and starts Postgres
-make migrate-up   # runs `migrate` inside the db container
+# Full stack (API + Postgres) in Docker
+docker compose up --build
 ```
 
-Roll back the most recent migration:
+The container always listens on port `8080`; the host reaches it on
+`localhost:8081` (see `docker-compose.yml`). Copy `.env.example` to `.env`
+before running — `DATABASE_URL` is required.
 
-```sh
-make migrate-down
+## Testing
+
+Unit tests use only the standard library and do **not** require Postgres or
+Docker, so they are safe to run anywhere:
+
+```bash
+go test ./...
 ```
 
-Other helpers: `make migrate-version`, `make migrate-create name=add_users`,
-`make migrate-drop`. Run `make help` for the full list.
+### Integration tests (optional)
 
-> **Optional (host CLI):** if you prefer running migrations from the host,
-> `brew install golang-migrate`, then:
-> `migrate -path migrations -database "postgres://postgres:postgres@localhost:5433/pkm_tracker?sslmode=disable" up`
+Database integration tests are skipped unless `TEST_DATABASE_URL` is set. To run
+them against the dockerized Postgres (start it first with `docker compose up`):
 
-Inspect the schema:
-
-```sh
-# List tables
-docker compose exec db psql -U postgres -d pkm_tracker -c "\dt"
-
-# Describe a table
-docker compose exec db psql -U postgres -d pkm_tracker -c "\d pokemon_species"
+```bash
+TEST_DATABASE_URL="postgres://postgres:postgres@localhost:5433/pkm_tracker?sslmode=disable" go test ./...
 ```
 
-### Schema overview
+## Linting
 
-The catalogue models the Pokémon Dex without user data yet:
+Linting uses [golangci-lint](https://golangci-lint.run/) v2 (config in
+`.golangci.yml`):
 
-- `pokemon_generations` — generation metadata (number, name, region).
-- `pokemon_species` — National Dex species (carries no type columns).
-- `pokemon_forms` — forms/variants of a species (default, regional, mega, etc.).
-- `pokemon_types` — the 18 Pokémon types.
-- `pokemon_form_types` — joins forms to their type(s), with slot order.
+```bash
+golangci-lint run
+```
 
-Types belong to **forms**, not species, because forms of the same species can
-have different typings (e.g. Mega Charizard X is Fire/Dragon).
+Install it with `brew install golangci-lint`. If you don't want a local install,
+you can run the same version CI uses with:
 
-Migration `000002` seeds reference data (the 9 generations and 18 types) only.
+```bash
+go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run
+```
+
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`, "Go CI") runs `go test ./...` and
+`golangci-lint run` on pushes to `development` and on PRs targeting it.
+
+## Git workflow
+
+Branch off `development` and PR back into it; `main` is the release branch.

@@ -1,3 +1,4 @@
+// Package database provides helpers for connecting to PostgreSQL.
 package database
 
 import (
@@ -7,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// PostgreSQL connection pool
+// Open creates a PostgreSQL connection pool and verifies it with a ping.
 func Open(
 	ctx context.Context,
 	databaseURL string,
