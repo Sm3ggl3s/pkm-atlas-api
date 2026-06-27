@@ -12,8 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Run full stack (API + Postgres) in Docker:** `docker-compose up`
 - **Build:** `go build -o ./tmp/api ./cmd/api`
 - **Test:** `go test ./...` (no tests exist yet)
-
-There is no lint config yet; use `gofmt`/`go vet`.
+- **Lint:** `golangci-lint run` (config in `.golangci.yml`; install via `brew install golangci-lint`)
 
 ## Environment
 

@@ -1,3 +1,5 @@
+// Package config loads the API's runtime configuration from environment
+// variables (optionally seeded from a .env file).
 package config
 
 import (
@@ -13,7 +15,8 @@ type Config struct {
 	DatabaseURL string
 }
 
-// Loads the environment variables from a .env file and returns a Config struct.
+// Load reads configuration from environment variables (optionally seeded from
+// a .env file) and returns a populated Config.
 func Load() (Config, error) {
 	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
 		return Config{}, fmt.Errorf("load .env file: %w", err)

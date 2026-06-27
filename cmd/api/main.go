@@ -1,3 +1,4 @@
+// Package main is the entrypoint for the pkm-atlas-api HTTP server.
 package main
 
 import (
@@ -9,6 +10,16 @@ import (
 	"github.com/Sm3ggl3s/pkm-atlas-api/internal/config"
 	"github.com/Sm3ggl3s/pkm-atlas-api/internal/database"
 )
+
+// newMux builds the HTTP router with all routes registered. It is kept
+// separate from main so tests can exercise the real routing table.
+func newMux() *http.ServeMux {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/health", healthHandler)
+
+	return mux
+}
 
 func main() {
 	cfg, err := config.Load()
@@ -24,9 +35,7 @@ func main() {
 	}
 	defer pool.Close()
 
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("/health", healthHandler)
+	mux := newMux()
 
 	server := &http.Server{
 		Addr:              ":" + cfg.Port,
