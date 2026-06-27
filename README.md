@@ -2,29 +2,37 @@
 
 A Go HTTP API for a Pokémon Dex Tracker, backed by PostgreSQL.
 
+Common tasks are wrapped in a `Makefile` — run `make help` to list them
+(e.g. `make db-up`, `make migrate-up`, `make test`, `make run`).
+
 ## Database migrations
 
 Migrations live in `migrations/` as numbered [golang-migrate](https://github.com/golang-migrate/migrate)
-up/down SQL files. Install the `migrate` CLI first (e.g.
-`brew install golang-migrate`).
+up/down SQL files.
 
-Start Postgres (host port `5433` → container `5432`):
+The migrations run **inside the db container** — the `migrate` CLI is baked into
+the custom db image (`Dockerfile.db`), so no extra container and no host
+`migrate` CLI are needed, just Docker.
 
-```sh
-docker compose up -d db
-```
-
-Apply all migrations:
+Start Postgres (host port `5433` → container `5432`) and apply all migrations:
 
 ```sh
-migrate -path migrations -database "postgres://postgres:postgres@localhost:5433/pkm_tracker?sslmode=disable" up
+make db-up        # builds the custom db image (first run) and starts Postgres
+make migrate-up   # runs `migrate` inside the db container
 ```
 
 Roll back the most recent migration:
 
 ```sh
-migrate -path migrations -database "postgres://postgres:postgres@localhost:5433/pkm_tracker?sslmode=disable" down 1
+make migrate-down
 ```
+
+Other helpers: `make migrate-version`, `make migrate-create name=add_users`,
+`make migrate-drop`. Run `make help` for the full list.
+
+> **Optional (host CLI):** if you prefer running migrations from the host,
+> `brew install golang-migrate`, then:
+> `migrate -path migrations -database "postgres://postgres:postgres@localhost:5433/pkm_tracker?sslmode=disable" up`
 
 Inspect the schema:
 

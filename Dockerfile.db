@@ -1,0 +1,7 @@
+# Postgres with the golang-migrate CLI baked in, so migrations run *inside* the
+# db container (no separate migrate container). The migrate/migrate image is
+# alpine/musl, matching postgres:17-alpine, so the binary is drop-in compatible.
+FROM migrate/migrate:latest AS migratebin
+
+FROM postgres:17-alpine
+COPY --from=migratebin /usr/local/bin/migrate /usr/local/bin/migrate
