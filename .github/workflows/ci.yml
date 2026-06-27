@@ -1,0 +1,86 @@
+name: Go CI
+
+# Run the test gate on PRs into development AND main, plus direct pushes to those
+# branches (belt-and-braces; direct pushes are blocked by branch protection).
+on:
+  pull_request:
+    branches: [development, main]
+  push:
+    branches: [development, main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    # NOTE: this exact name is the required-status-check "context" referenced by
+    # the branch-protection rules. If you rename it, update the protection config.
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: pkm_tracker
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/pkm_tracker?sslmode=disable
+      # Setting TEST_DATABASE_URL activates the Postgres integration tests
+      # (they self-skip when it is unset).
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/pkm_tracker?sslmode=disable
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          cache: true
+
+      - name: Download modules
+        run: go mod download
+
+      - name: Install golang-migrate
+        run: |
+          curl -fsSL https://github.com/golang-migrate/migrate/releases/download/v4.18.1/migrate.linux-amd64.tar.gz \
+            | tar xz
+          sudo mv migrate /usr/local/bin/migrate
+
+      - name: Run migrations
+        run: migrate -path migrations -database "$DATABASE_URL" up
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./...
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.12.2
+
+  guard:
+    # GitHub branch protection cannot restrict a PR's SOURCE branch, so this job
+    # enforces "only development may merge into main". Make it a required check
+    # on main (see branch-protection config) and the rule is effective.
+    name: Guard - only development into main
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce source branch
+        run: |
+          if [ "${{ github.head_ref }}" != "development" ]; then
+            echo "::error::PRs into main must come from 'development' (got '${{ github.head_ref }}')."
+            exit 1
+          fi
+          echo "Source branch OK: ${{ github.head_ref }}"

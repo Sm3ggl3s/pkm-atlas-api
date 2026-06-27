@@ -1,0 +1,27 @@
+# golangci-lint v2 configuration.
+# Run with: golangci-lint run
+#
+# The goal here is to catch real issues without being painful for a small,
+# beginner-friendly Go project. Linters live under "linters"; auto-formatters
+# (gofmt/goimports) live under "formatters" in the v2 config format.
+version: "2"
+
+linters:
+  enable:
+    # Core correctness checks.
+    - errcheck     # unchecked errors
+    - govet        # suspicious constructs (vet)
+    - staticcheck  # broad static analysis
+    - ineffassign  # assignments that are never used
+    - unused       # unused code
+
+    # Style / quality checks that are still beginner-friendly.
+    - revive       # configurable, lighter-weight golint successor
+    - bodyclose    # response/request bodies that are never closed
+    - errorlint    # correct error wrapping/comparison
+    - misspell     # common spelling mistakes in comments/strings
+
+formatters:
+  enable:
+    - gofmt      # standard Go formatting
+    - goimports  # formatting + import grouping/ordering
