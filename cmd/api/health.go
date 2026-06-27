@@ -9,7 +9,7 @@ type HealthResponse struct {
 	Status string `json:"status"`
 }
 
-func healthHandler(w http.ResponseWriter, r *http.Request) {
+func healthHandler(w http.ResponseWriter, _ *http.Request) {
 	response := HealthResponse{
 		Status: "OK",
 	}
