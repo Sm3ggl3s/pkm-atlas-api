@@ -1,0 +1,21 @@
+# Git
+.git
+.gitignore
+
+# Build / tmp output
+tmp/
+*.exe
+*.test
+*.out
+coverage.*
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+
+# Local env files (keep the example in the image-less build context)
+.env
+.env.*
+!.env.example
