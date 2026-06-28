@@ -11,9 +11,6 @@
 # Test binary, built with `go test -c`
 *.test
 
-# Air hot-reload build output
-tmp/
-
 # Code coverage profiles and other test artifacts
 *.out
 coverage.*

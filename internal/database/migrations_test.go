@@ -23,7 +23,7 @@ func migrationsDir(t *testing.T) string {
 	return filepath.Join(filepath.Dir(thisFile), "..", "..", "migrations")
 }
 
-func execSQLFile(t *testing.T, ctx context.Context, conn *pgx.Conn, path string) {
+func execSQLFile(ctx context.Context, t *testing.T, conn *pgx.Conn, path string) {
 	t.Helper()
 	sql, err := os.ReadFile(path)
 	if err != nil {
@@ -35,7 +35,7 @@ func execSQLFile(t *testing.T, ctx context.Context, conn *pgx.Conn, path string)
 }
 
 // tableExists reports whether a public table is present.
-func tableExists(t *testing.T, ctx context.Context, conn *pgx.Conn, table string) bool {
+func tableExists(ctx context.Context, t *testing.T, conn *pgx.Conn, table string) bool {
 	t.Helper()
 	var reg *string
 	if err := conn.QueryRow(ctx, "SELECT to_regclass($1)::text", "public."+table).Scan(&reg); err != nil {
@@ -62,7 +62,7 @@ func TestMigration000001_UpDown(t *testing.T) {
 	t.Cleanup(func() {
 		closeCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		conn.Close(closeCtx)
+		_ = conn.Close(closeCtx)
 	})
 
 	dir := migrationsDir(t)
@@ -71,7 +71,7 @@ func TestMigration000001_UpDown(t *testing.T) {
 
 	// Ensure a clean slate and leave the DB clean afterwards, so the test is
 	// idempotent across reruns regardless of prior state.
-	execSQLFile(t, ctx, conn, downFile)
+	execSQLFile(ctx, t, conn, downFile)
 	t.Cleanup(func() {
 		cleanupCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
@@ -94,17 +94,17 @@ func TestMigration000001_UpDown(t *testing.T) {
 	}
 
 	// Up: every catalogue table should exist.
-	execSQLFile(t, ctx, conn, upFile)
+	execSQLFile(ctx, t, conn, upFile)
 	for _, table := range tables {
-		if !tableExists(t, ctx, conn, table) {
+		if !tableExists(ctx, t, conn, table) {
 			t.Errorf("after up migration, table %q does not exist", table)
 		}
 	}
 
 	// Down: every catalogue table should be gone.
-	execSQLFile(t, ctx, conn, downFile)
+	execSQLFile(ctx, t, conn, downFile)
 	for _, table := range tables {
-		if tableExists(t, ctx, conn, table) {
+		if tableExists(ctx, t, conn, table) {
 			t.Errorf("after down migration, table %q still exists", table)
 		}
 	}
