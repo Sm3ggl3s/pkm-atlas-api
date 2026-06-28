@@ -45,7 +45,10 @@ func tableExists(t *testing.T, ctx context.Context, conn *pgx.Conn, table string
 }
 
 func TestMigration000001_UpDown(t *testing.T) {
-	url := testDatabaseURL(t)
+	url := os.Getenv("TEST_DATABASE_URL")
+	if url == "" {
+		t.Skip("TEST_DATABASE_URL not set; skipping database integration test")
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()

@@ -7,18 +7,6 @@ import (
 	"time"
 )
 
-// testDatabaseURL returns the integration database URL, or skips the test when
-// it is not configured. Integration tests run against the docker-compose
-// Postgres (see `make db-up`).
-func testDatabaseURL(t *testing.T) string {
-	t.Helper()
-	url := os.Getenv("TEST_DATABASE_URL")
-	if url == "" {
-		t.Skip("TEST_DATABASE_URL not set; skipping database integration test")
-	}
-	return url
-}
-
 func TestOpen_Errors(t *testing.T) {
 	tests := []struct {
 		name string
@@ -49,7 +37,10 @@ func TestOpen_Errors(t *testing.T) {
 }
 
 func TestOpen_Integration(t *testing.T) {
-	url := testDatabaseURL(t)
+	url := os.Getenv("TEST_DATABASE_URL")
+	if url == "" {
+		t.Skip("TEST_DATABASE_URL not set; skipping database integration test")
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
