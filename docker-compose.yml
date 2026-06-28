@@ -21,7 +21,12 @@ services:
         condition: service_healthy
 
   db:
-    image: postgres:17-alpine
+    # Custom image: Postgres + the golang-migrate CLI baked in, so migrations run
+    # inside this container (no separate migrate container).
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+    image: pkm-atlas-db
     env_file:
       - .env
     environment:
@@ -32,6 +37,8 @@ services:
       - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      # Mounted so the in-container migrate CLI can read (and `create` can write).
+      - ./migrations:/migrations
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-pkm_tracker}"]
       interval: 5s
