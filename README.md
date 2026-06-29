@@ -17,6 +17,38 @@ The container always listens on port `8080`; the host reaches it on
 `localhost:8081` (see `docker-compose.yml`). Copy `.env.example` to `.env`
 before running — `DATABASE_URL` is required.
 
+## API
+
+Read-only Pokédex endpoints (JSON):
+
+| Method & path | Description |
+| --- | --- |
+| `GET /health` | Liveness check. |
+| `GET /api/v1/pokemon` | List all Pokémon (summary shape). |
+| `GET /api/v1/pokemon/{slug}` | Full detail for one Pokémon (`404` if unknown). |
+| `GET /api/v1/types` | List all types. |
+| `GET /api/v1/types/{slug}/pokemon` | Pokémon of a given type (`404` if the type is unknown). |
+
+```bash
+curl http://localhost:8081/api/v1/pokemon/bulbasaur
+```
+
+## Seeding from PokéAPI
+
+The database is populated by a standalone, re-runnable CLI that fetches from
+[PokéAPI](https://pokeapi.co) and **upserts** species, forms, types, detail
+fields and evolutions, so the data stays a 1-1 mirror of the source. Apply
+migrations first, then seed:
+
+```bash
+make migrate-up                 # ensure the schema exists
+make seed                       # full National Dex
+make seed ARGS="--limit 151"    # just the first 151 (faster)
+```
+
+Other flags: `--database-url`, `--base-url`, `--concurrency`, `--timeout`
+(see `go run ./cmd/seed --help`).
+
 ## Testing
 
 Unit tests use only the standard library and do **not** require Postgres or

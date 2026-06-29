@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/Sm3ggl3s/pkm-atlas-api/internal/pokemon"
 )
 
 // TestHealthHandler checks the status code, content type and JSON body the
@@ -38,7 +40,9 @@ func TestHealthHandler(t *testing.T) {
 // TestMuxRouting exercises the real router built by newMux so we cover route
 // registration and the 404 fallback for unknown paths.
 func TestMuxRouting(t *testing.T) {
-	mux := newMux()
+	// A nil-repo handler is fine here: this test only hits /health and an
+	// unknown path, never the pokémon routes.
+	mux := newMux(pokemon.NewHandler(nil))
 
 	tests := []struct {
 		name       string

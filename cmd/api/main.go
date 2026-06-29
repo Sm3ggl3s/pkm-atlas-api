@@ -9,14 +9,20 @@ import (
 
 	"github.com/Sm3ggl3s/pkm-atlas-api/internal/config"
 	"github.com/Sm3ggl3s/pkm-atlas-api/internal/database"
+	"github.com/Sm3ggl3s/pkm-atlas-api/internal/pokemon"
 )
 
 // newMux builds the HTTP router with all routes registered. It is kept
 // separate from main so tests can exercise the real routing table.
-func newMux() *http.ServeMux {
+func newMux(pokemonHandler *pokemon.Handler) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/health", healthHandler)
+
+	mux.HandleFunc("GET /api/v1/pokemon", pokemonHandler.ListPokemon)
+	mux.HandleFunc("GET /api/v1/pokemon/{slug}", pokemonHandler.GetPokemon)
+	mux.HandleFunc("GET /api/v1/types", pokemonHandler.ListTypes)
+	mux.HandleFunc("GET /api/v1/types/{slug}/pokemon", pokemonHandler.ListPokemonByType)
 
 	return mux
 }
@@ -35,7 +41,9 @@ func main() {
 	}
 	defer pool.Close()
 
-	mux := newMux()
+	pokemonHandler := pokemon.NewHandler(pokemon.NewRepository(pool))
+
+	mux := newMux(pokemonHandler)
 
 	server := &http.Server{
 		Addr:              ":" + cfg.Port,

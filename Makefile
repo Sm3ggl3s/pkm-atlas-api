@@ -28,6 +28,10 @@ run: ## Run with hot reload (air)
 build: ## Build the API binary to ./tmp/api
 	go build -o ./tmp/api ./cmd/api
 
+.PHONY: seed
+seed: ## Seed the full National Dex from PokéAPI (override args: ARGS="--limit 151")
+	go run ./cmd/seed $(ARGS)
+
 .PHONY: test
 test: ## Run all tests
 	go test ./...
